@@ -146,12 +146,6 @@ Sub ProcesarCursosTxt()
         End If
     Next i
     
-    ' 5) Eliminar filas duplicadas en CURS_SECC
-    sPaso = "Eliminar duplicados en CURS_SECC"
-    Dim colCursSecc As Long
-    colCursSecc = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
-    wsNew.Range("A1").CurrentRegion.RemoveDuplicates _
-        Columns:=Array(colCursSecc), Header:=xlYes
 
     ' 5.1) Formatear CURS_SECC como XXXX9999-yyy
     sPaso = "Formatear CURS_SECC como XXXX9999-yyy"
@@ -206,6 +200,84 @@ Sub ProcesarCursosTxt()
         wsNew.Columns(colSALON).Delete
         wsNew.Columns(colEDIF).Delete
     End If
+
+	' 5.2) Consolidar horarios por CURS_SECC
+	sPaso = "Consolidar múltiples filas por CURS_SECC"
+
+	Dim colDays As Long, colHin As Long, colHout As Long
+	Dim colHorario As Long, colCursoSecc As Long
+	Dim dictSecciones As Object, key As String
+	Dim rowData As Variant
+	Dim hInStr As String, hOutStr As String
+
+	Set dictSecciones = CreateObject("Scripting.Dictionary")
+
+	colCursoSecc = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
+	colSalon = wsNew.Rows(1).Find("EDIF-SALON", , xlValues, xlWhole).Column
+	colDays = wsNew.Rows(1).Find("DAYS", , xlValues, xlWhole).Column
+	colHin = wsNew.Rows(1).Find("H-IN", , xlValues, xlWhole).Column
+	colHout = wsNew.Rows(1).Find("H-OUT", , xlValues, xlWhole).Column
+
+	' Crear columna nueva para HORARIO
+	colHorario = wsNew.Cells(1, wsNew.Columns.Count).End(xlToLeft).Column + 1
+	wsNew.Cells(1, colHorario).Value = "HORARIO"
+
+	lastRow = wsNew.Cells(wsNew.Rows.Count, 1).End(xlUp).Row
+
+	' Recorrer y agrupar por CURS_SECC
+	For i = 2 To lastRow
+		key = Trim(wsNew.Cells(i, colCursoSecc).Value)
+		
+		If IsDate(wsNew.Cells(i, colHin).Value) Then
+			hInStr = Format(wsNew.Cells(i, colHin).Value, "hh:mm")
+		Else
+			hInStr = wsNew.Cells(i, colHin).Text
+		End If
+		
+		If IsDate(wsNew.Cells(i, colHout).Value) Then
+			hOutStr = Format(wsNew.Cells(i, colHout).Value, "hh:mm")
+		Else
+			hOutStr = wsNew.Cells(i, colHout).Text
+		End If
+
+		If Not dictSecciones.exists(key) Then
+			dictSecciones.Add key, _
+				Array(wsNew.Cells(i, colSalon).Value, _
+					  wsNew.Cells(i, colDays).Value, _
+					  hInStr & "-" & hOutStr)
+		Else
+			rowData = dictSecciones(key)
+			rowData(0) = rowData(0) & vbLf & wsNew.Cells(i, colSalon).Value
+			rowData(1) = rowData(1) & vbLf & wsNew.Cells(i, colDays).Value
+			rowData(2) = rowData(2) & vbLf & hInStr & "-" & hOutStr
+			dictSecciones(key) = rowData
+		End If
+	Next i
+
+	' Eliminar todas las filas menos una por CURS_SECC
+	Dim seen As Object: Set seen = CreateObject("Scripting.Dictionary")
+	For i = lastRow To 2 Step -1
+		key = Trim(wsNew.Cells(i, colCursoSecc).Value)
+		If seen.exists(key) Then
+			wsNew.Rows(i).Delete
+		Else
+			seen.Add key, True
+		End If
+	Next i
+
+	' Recalcular último row
+	lastRow = wsNew.Cells(wsNew.Rows.Count, 1).End(xlUp).Row
+
+	' Insertar los valores consolidados
+	For i = 2 To lastRow
+		key = Trim(wsNew.Cells(i, colCursoSecc).Value)
+		If dictSecciones.exists(key) Then
+			rowData = dictSecciones(key)
+			wsNew.Cells(i, colSalon).Value = rowData(0)
+			wsNew.Cells(i, colDays).Value = rowData(1)
+			wsNew.Cells(i, colHorario).Value = rowData(2)
+		End If
+	Next i
 
     ' 6) Consolidar datos de PROFx y LOD%x en una sola celda
     sPaso = "Consolidar columnas PROFx y LOD%x"
@@ -288,7 +360,9 @@ Sub ProcesarCursosTxt()
     
     ' 7) Añadir columna TIPO_DE_SECCION
     sPaso = "Añadir columna TIPO_DE_SECCION"
+	Dim colCursSecc As Long
     Dim colTipoDeSeccion As Long
+	colCursSecc = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
     colTipoDeSeccion = wsNew.Cells(1, wsNew.Columns.Count).End(xlToLeft).Column + 1
     wsNew.Cells(1, colTipoDeSeccion).Value = "TIPO_DE_SECCION"
     
