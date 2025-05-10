@@ -79,10 +79,13 @@ Sub ProcesarCursosTxt()
         Exit Sub
     End If
     
-    ' Leer columnas esperadas desde ColDTAA
+    ' Leer columnas esperadas desde ColDTAA, ignorando las que tengan OrdenArchivoDTAA = 9999
+    Dim ordenVal As Variant
     For i = 1 To loCols.ListRows.Count
         colItem = Trim(loCols.ListRows(i).Range(1, 1).Value)
-        If Len(colItem) > 0 Then
+        ordenVal = loCols.ListRows(i).Range(1, 2).Value ' Segunda columna = OrdenArchivoDTAA
+
+        If Len(colItem) > 0 And Not IsEmpty(ordenVal) And ordenVal <> 9999 Then
             colRequeridas.Add colItem
             dictRequeridas(UCase(colItem)) = True
         End If
@@ -596,6 +599,77 @@ Sub ProcesarCursosTxt()
         .ShowValue = True
     End With
 
+    ' 9.45) Reorganizar, renombrar y describir columnas según TablaColumnas
+    sPaso = "Aplicar estructura según TablaColumnas"
+    
+    Dim loTC As ListObject
+    Dim colOrden As Variant, colNombre As Variant, colDescripcion As Variant
+    Dim colIncluir As Variant, colEtiqueta As Variant
+    Dim wsTC As Worksheet
+    Dim fila As ListRow
+    Dim colEncontrada As Range
+    Dim nuevaColIndex As Long
+    
+    ' Buscar la tabla TablaColumnas
+    Set loTC = Nothing
+    For Each wsTC In ThisWorkbook.Worksheets
+        On Error Resume Next
+        Set loTC = wsTC.ListObjects("TablaColumnas")
+        On Error GoTo ErrHandler
+        If Not loTC Is Nothing Then Exit For
+    Next wsTC
+    
+    If loTC Is Nothing Then
+        MsgBox "No se encontró la tabla 'TablaColumnas'", vbCritical
+        Exit Sub
+    End If
+    
+    nuevaColIndex = 1
+    
+    For Each fila In loTC.ListRows
+        colOrden = fila.Range(1, loTC.ListColumns("OrdenInforme").Index).Value
+        colNombre = Trim(fila.Range(1, loTC.ListColumns("ColDTAA").Index).Value)
+        colEtiqueta = Trim(fila.Range(1, loTC.ListColumns("ColumnaInforme").Index).Value)
+        colDescripcion = Trim(fila.Range(1, loTC.ListColumns("Descripción").Index).Value)
+        colIncluir = UCase(Trim(fila.Range(1, loTC.ListColumns("Incluir").Index).Value))
+    
+        If colOrden <> 9999 And colNombre <> "" Then
+            Set colEncontrada = Nothing
+            Set colEncontrada = wsNew.Rows(1).Find(What:=colNombre, LookAt:=xlWhole)
+    
+            If Not colEncontrada Is Nothing Then
+                ' Mover la columna si es necesario
+                If colEncontrada.Column <> nuevaColIndex Then
+                    colEncontrada.EntireColumn.Cut
+                    wsNew.Columns(nuevaColIndex).Insert Shift:=xlToRight
+                    Application.CutCopyMode = False
+                End If
+    
+                ' Renombrar si ColumnaInforme no está vacía
+                If colEtiqueta <> "" Then
+                    wsNew.Cells(1, nuevaColIndex).Value = colEtiqueta
+                End If
+    
+                ' Agregar mensaje de entrada con la descripción
+                With wsNew.Cells(1, nuevaColIndex).Validation
+                    .Delete
+                    .Add Type:=xlValidateInputOnly, AlertStyle:=xlValidAlertStop, Operator:=xlBetween
+                    .InputTitle = "Descripción"
+                    .InputMessage = colDescripcion
+                    .IgnoreBlank = True
+                    .InCellDropdown = False
+                End With
+    
+                ' Ocultar si Incluir = "N"
+                If colIncluir = "N" Then
+                    wsNew.Columns(nuevaColIndex).Hidden = True
+                End If
+    
+                nuevaColIndex = nuevaColIndex + 1
+            End If
+        End If
+    Next fila
+
     ' 9.5) Dividir en hojas según Facultades
     sPaso = "Dividir datos en hojas según Facultades"
     Dim loFacultades As ListObject
@@ -606,12 +680,9 @@ Sub ProcesarCursosTxt()
     Dim nuevaWs As Worksheet
     Dim copiarRango As Range
     Dim colFACnueva As Long, colHidden As Long
-    Dim columnasOcultar As Variant
     Dim nombreFacultad As String
     Dim facValor As Variant, agruparValor As Variant
     Dim colName As Variant
-    
-    columnasOcultar = Array("NOT1", "NOT2", "START", "END", "EDIF", "SALON", "DAYS", "H-IN", "H-OUT")
     
     Set dictHojas = CreateObject("Scripting.Dictionary")
     Set dictHojasNombres = CreateObject("Scripting.Dictionary")
@@ -704,15 +775,6 @@ Sub ProcesarCursosTxt()
         ' Ajustar ancho de columnas para que se vea todo
         nuevaWs.Columns.AutoFit
 
-        ' Esconder columnas especificadas
-        For Each colName In columnasOcultar
-            On Error Resume Next
-            colHidden = nuevaWs.Rows(1).Find(colName, , xlValues, xlWhole).Column
-            If colHidden > 0 Then
-                nuevaWs.Columns(colHidden).Hidden = True
-            End If
-            On Error GoTo ErrHandler
-        Next colName
     Next facValor
     
     ' Limpiar filtros de la hoja principal
@@ -737,3 +799,5 @@ ErrHandler:
            "Descripción: " & Err.Description, _
            vbCritical, "Error en macro"
 End Sub
+
+
