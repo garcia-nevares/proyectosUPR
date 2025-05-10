@@ -234,17 +234,32 @@ Sub ProcesarCursosTxt()
     For i = 2 To lastRow
         Dim sDetalle As String: sDetalle = ""
         For j = 1 To 6
-            Dim sProf As String
-            sProf = ""
-            If colProf(j) > 0 Then sProf = Trim(wsNew.Cells(i, colProf(j)).Value)
-            If sProf <> "" Then
-                If sDetalle <> "" Then sDetalle = sDetalle & vbNewLine
-                sDetalle = sDetalle & sProf
-                Dim sLOD As String
-                sLOD = ""
-                If colLOD(j) > 0 Then sLOD = Trim(wsNew.Cells(i, colLOD(j)).Value)
-                If sLOD <> "" Then sDetalle = sDetalle & " (" & sLOD & "%)"
-            End If
+		Dim sProf as String
+		Dim sID As String, last4 As String, sLOD As String
+		sProf = ""
+		If colID(j) > 0 Then sID = Trim(wsNew.Cells(i, colID(j)).Value) Else sID = ""
+
+		If colProf(j) > 0 Then sProf = Trim(wsNew.Cells(i, colProf(j)).Value)
+
+		If sID <> "" And sID <> "0" Then
+			If sProf = "" Then
+				If Len(sID) >= 4 Then
+					last4 = Right(sID, 4)
+				Else
+					last4 = sID
+				End If
+				sProf = "XXX-XX-" & last4
+			End If
+		End If
+
+		If sProf <> "" Then
+			If sDetalle <> "" Then sDetalle = sDetalle & vbNewLine
+			sDetalle = sDetalle & sProf
+
+			sLOD = ""
+			If colLOD(j) > 0 Then sLOD = Trim(wsNew.Cells(i, colLOD(j)).Value)
+			If sLOD <> "" Then sDetalle = sDetalle & " (" & sLOD & "%)"
+		End If
         Next j
         wsNew.Cells(i, colConsol).Value = sDetalle
     Next i
