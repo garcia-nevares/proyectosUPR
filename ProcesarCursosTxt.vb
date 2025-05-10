@@ -169,6 +169,44 @@ Sub ProcesarCursosTxt()
         End If
     Next i
 
+    ' 5.2) Consolidar columnas EDIF y SALON en EDIF-SALON
+    sPaso = "Consolidar columnas EDIF y SALON"
+
+    Dim colEDIF As Long, colSALON As Long, colEDIF_SALON As Long
+
+    colEDIF = wsNew.Rows(1).Find("EDIF", , xlValues, xlWhole).Column
+    colSALON = wsNew.Rows(1).Find("SALON", , xlValues, xlWhole).Column
+
+    ' Insertar columna nueva al final
+    colEDIF_SALON = wsNew.Cells(1, wsNew.Columns.Count).End(xlToLeft).Column + 1
+    wsNew.Cells(1, colEDIF_SALON).Value = "EDIF-SALON"
+
+    ' Llenar valores combinados
+    For i = 2 To lastRow
+        Dim edifVal As String, salonVal As String
+        edifVal = Trim(wsNew.Cells(i, colEDIF).Value)
+        salonVal = Trim(wsNew.Cells(i, colSALON).Value)
+
+        If edifVal <> "" And salonVal <> "" Then
+            wsNew.Cells(i, colEDIF_SALON).Value = edifVal & "-" & salonVal
+        ElseIf edifVal <> "" Then
+            wsNew.Cells(i, colEDIF_SALON).Value = edifVal
+        ElseIf salonVal <> "" Then
+            wsNew.Cells(i, colEDIF_SALON).Value = salonVal
+        Else
+            wsNew.Cells(i, colEDIF_SALON).Value = ""
+        End If
+    Next i
+
+    ' Eliminar columnas originales (de derecha a izquierda para evitar desplazamiento)
+    If colEDIF > colSALON Then
+        wsNew.Columns(colEDIF).Delete
+        wsNew.Columns(colSALON).Delete
+    Else
+        wsNew.Columns(colSALON).Delete
+        wsNew.Columns(colEDIF).Delete
+    End If
+
     ' 6) Consolidar datos de PROFx y LOD%x en una sola celda
     sPaso = "Consolidar columnas PROFx y LOD%x"
     Dim colProf(1 To 6) As Long, colLOD(1 To 6) As Long, colID(1 To 6) As Long
