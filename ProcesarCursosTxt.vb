@@ -726,6 +726,85 @@ SiguienteColumna:
     ' Alinear verticalmente arriba todas las celdas en la hoja principal
     wsNew.Cells.VerticalAlignment = xlTop
 
+    ' Añadir columnas de decisión antes de dividir por facultades
+    sPaso = "Añadir columnas de validación y comentario"
+
+    Dim colInsertBase As Long
+    Dim colAccion As Long, colJustif As Long, colFinal As Long, colComent As Long
+    colInsertBase = wsNew.Cells(1, wsNew.Columns.Count).End(xlToLeft).Column + 1
+
+    ' 1. ACCIÓN
+    colAccion = colInsertBase
+    wsNew.Cells(1, colAccion).Value = "ACCIÓN"
+    With wsNew.Range(wsNew.Cells(2, colAccion), wsNew.Cells(wsNew.Rows.Count, colAccion))
+        .Validation.Delete
+        .Validation.Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Operator:=xlBetween, Formula1:="A,C"
+        .Validation.IgnoreBlank = True
+        .Validation.InCellDropdown = True
+    End With
+    With wsNew.Cells(1, colAccion).Validation
+        .Delete
+        .Add Type:=xlValidateInputOnly, AlertStyle:=xlValidAlertStop, Operator:=xlBetween
+        .InputTitle = "ACCIÓN"
+        .InputMessage = "A = dejar abierta; C = sección cerrada"
+    End With
+
+    ' 2. JUSTIFICACIÓN
+    colJustif = colAccion + 1
+    wsNew.Cells(1, colJustif).Value = "JUSTIFICACIÓN"
+    With wsNew.Cells(1, colJustif).Validation
+        .Delete
+        .Add Type:=xlValidateInputOnly, AlertStyle:=xlValidAlertStop, Operator:=xlBetween
+        .InputTitle = "JUSTIFICACIÓN"
+        .InputMessage = "Explicación para dejar abierta o cerrar la sección"
+    End With
+
+    ' 3. ACCIÓN FINAL
+    colFinal = colJustif + 1
+    wsNew.Cells(1, colFinal).Value = "ACCIÓN FINAL"
+    With wsNew.Range(wsNew.Cells(2, colFinal), wsNew.Cells(wsNew.Rows.Count, colFinal))
+        .Validation.Delete
+        .Validation.Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Operator:=xlBetween, Formula1:="A,C,D"
+        .Validation.IgnoreBlank = True
+        .Validation.InCellDropdown = True
+    End With
+    With wsNew.Cells(1, colFinal).Validation
+        .Delete
+        .Add Type:=xlValidateInputOnly, AlertStyle:=xlValidAlertStop, Operator:=xlBetween
+        .InputTitle = "ACCIÓN FINAL"
+        .InputMessage = "A = dejar abierta; C = cerrada por Facultad; D = cerrada por DAA"
+    End With
+
+    ' 4. COMENTARIO DAA
+    colComent = colFinal + 1
+    wsNew.Cells(1, colComent).Value = "COMENTARIO DAA"
+    With wsNew.Cells(1, colComent).Validation
+        .Delete
+        .Add Type:=xlValidateInputOnly, AlertStyle:=xlValidAlertStop, Operator:=xlBetween
+        .InputTitle = "COMENTARIO DAA"
+        .InputMessage = "Observaciones o instrucciones del DAA"
+    End With
+
+    ' Proteger hoja permitiendo modificar solo esas 4 columnas
+    Dim cell As Range
+    wsNew.Unprotect
+    wsNew.Cells.Locked = True
+    
+    lastRow = wsNew.Cells(wsNew.Rows.Count, 1).End(xlUp).Row
+    
+    Dim colA As Long, colJ As Long, colF As Long, colC As Long
+    
+    colA = wsNew.Rows(1).Find("ACCIÓN", , xlValues, xlWhole).Column
+    colJ = wsNew.Rows(1).Find("JUSTIFICACIÓN", , xlValues, xlWhole).Column
+    colF = wsNew.Rows(1).Find("ACCIÓN FINAL", , xlValues, xlWhole).Column
+    colC = wsNew.Rows(1).Find("COMENTARIO DAA", , xlValues, xlWhole).Column
+    
+    wsNew.Range(wsNew.Cells(2, colA), wsNew.Cells(lastRow, colA)).Locked = False
+    wsNew.Range(wsNew.Cells(2, colJ), wsNew.Cells(lastRow, colJ)).Locked = False
+    wsNew.Range(wsNew.Cells(2, colF), wsNew.Cells(lastRow, colF)).Locked = False
+    wsNew.Range(wsNew.Cells(2, colC), wsNew.Cells(lastRow, colC)).Locked = False
+
+
     ' Aplicar filtros automáticos a la hoja principal
     sPaso = "Aplicar filtros automáticos"
     Dim dataRange As Range
@@ -784,6 +863,13 @@ SiguienteColumna:
     ' Limpiar criterios de filtro en hoja principal antes de guardar
     If wsNew.FilterMode Then wsNew.ShowAllData
 
+    ' Progeger la hoja
+    wsNew.Protect Password:="facultad2025", AllowFiltering:=True, _
+        AllowInsertingRows:=False, AllowDeletingRows:=False, _
+        AllowInsertingColumns:=False, AllowDeletingColumns:=False, _
+        AllowSorting:=False
+
+
     ' 20) Guardar el nuevo archivo
     sPaso = "Guardar nuevo archivo"
     Dim savePath As Variant
@@ -803,6 +889,8 @@ ErrHandler:
            "Descripción: " & Err.Description, _
            vbCritical, "Error en macro"
 End Sub
+
+
 
 
 
