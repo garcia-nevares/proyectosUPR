@@ -655,14 +655,16 @@ Sub ProcesarCursosTxt()
                     .InCellDropdown = False
                 End With
     
-                ' Ocultar si Incluir = "N"
+                ' Eliminar si Incluir = "N"
                 If colIncluir = "N" Then
-                    wsNew.Columns(nuevaColIndex).Hidden = True
+                    wsNew.Columns(nuevaColIndex).Delete
+                    GoTo SiguienteColumna ' Pasar al siguiente sin incrementar índice
                 End If
-    
+
                 nuevaColIndex = nuevaColIndex + 1
             End If
         End If
+SiguienteColumna:
     Next fila
 
     ' 19) Dividir en hojas según Facultades
@@ -720,7 +722,10 @@ Sub ProcesarCursosTxt()
     
     ' Identificar columna FAC en hoja Cursos
     colFAC = wsNew.Rows(1).Find("FAC", , xlValues, xlWhole).Column
-    
+        
+    ' Alinear verticalmente arriba todas las celdas en la hoja principal
+    wsNew.Cells.VerticalAlignment = xlTop
+
     ' Aplicar filtros automáticos a la hoja principal
     sPaso = "Aplicar filtros automáticos"
     Dim dataRange As Range
@@ -766,13 +771,18 @@ Sub ProcesarCursosTxt()
         ' Aplicar autofiltros
         nuevaWs.Range("A1").CurrentRegion.AutoFilter
 
-        ' Ajustar ancho de columnas para que se vea todo
+        ' Ajustar ancho de columnas para que se vea todo y filas
         nuevaWs.Columns.AutoFit
+        nuevaWs.Rows.AutoFit
 
     Next facValor
     
-    ' Ajustar ancho de columnas para que se vea todo
+    ' Ajustar ancho de columnas para que se vea todo y filas
     wsNew.Columns.AutoFit
+    wsNew.Rows.AutoFit
+    
+    ' Limpiar criterios de filtro en hoja principal antes de guardar
+    If wsNew.FilterMode Then wsNew.ShowAllData
 
     ' 20) Guardar el nuevo archivo
     sPaso = "Guardar nuevo archivo"
@@ -793,4 +803,6 @@ ErrHandler:
            "Descripción: " & Err.Description, _
            vbCritical, "Error en macro"
 End Sub
+
+
 
