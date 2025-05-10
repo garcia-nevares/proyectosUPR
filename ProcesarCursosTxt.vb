@@ -48,7 +48,7 @@ Sub ProcesarCursosTxt()
         .Refresh BackgroundQuery:=False
     End With
     
-    ' 3.1) Verificar columnas requeridas según TablaColumnas
+    ' 4) Verificar columnas requeridas según TablaColumnas
     sPaso = "Verificar columnas requeridas según TablaColumnas"
     
     Dim loCols As ListObject
@@ -136,7 +136,7 @@ Sub ProcesarCursosTxt()
         If falta.Count > 0 Then Exit Sub
     End If
   
-   ' 4) Eliminar filas con DEPT=ESUP
+    ' 5) Eliminar filas con DEPT=ESUP
     sPaso = "Eliminar filas con DEPT=ESUP"
     Dim lastRow As Long
     lastRow = wsNew.Cells(wsNew.Rows.Count, "A").End(xlUp).Row
@@ -150,7 +150,7 @@ Sub ProcesarCursosTxt()
     Next i
     
 
-    ' 5.1) Formatear CURS_SECC como XXXX9999-yyy
+    ' 6) Formatear CURS_SECC como XXXX9999-yyy
     sPaso = "Formatear CURS_SECC como XXXX9999-yyy"
 
     Dim colCurs As Long
@@ -166,7 +166,7 @@ Sub ProcesarCursosTxt()
         End If
     Next i
 
-    ' 5.2) Consolidar columnas EDIF y SALON en EDIF-SALON
+    ' 7) Consolidar columnas EDIF y SALON en EDIF-SALON
     sPaso = "Consolidar columnas EDIF y SALON"
 
     Dim colEDIF As Long, colSALON As Long, colEDIF_SALON As Long
@@ -204,7 +204,7 @@ Sub ProcesarCursosTxt()
         wsNew.Columns(colEDIF).Delete
     End If
 
-    ' 5.2) Consolidar horarios por CURS_SECC
+    ' 8) Consolidar horarios por CURS_SECC
     sPaso = "Consolidar múltiples filas por CURS_SECC"
 
     Dim colDays As Long, colHin As Long, colHout As Long
@@ -293,7 +293,7 @@ Sub ProcesarCursosTxt()
         wsNew.Columns(colHin).Delete
     End If
 
-    ' 6) Consolidar datos de PROFx y LOD%x en una sola celda
+    ' 9) Consolidar datos de PROFx y LOD%x en una sola celda
     sPaso = "Consolidar columnas PROFx y LOD%x"
     Dim colProf(1 To 6) As Long, colLOD(1 To 6) As Long, colID(1 To 6) As Long
     Dim celda As Range
@@ -372,7 +372,7 @@ Sub ProcesarCursosTxt()
         wsNew.Columns(vCols(j)).Delete
     Next j
     
-    ' 7) Añadir columna TIPO_DE_SECCION
+    ' 10) Añadir columna TIPO_DE_SECCION
     sPaso = "Añadir columna TIPO_DE_SECCION"
 
     Dim colTipoDeSeccion As Long
@@ -400,7 +400,7 @@ Sub ProcesarCursosTxt()
         wsNew.Cells(i, colTipoDeSeccion).Value = IIf(dictTipoClave(claveTipo) > 1, "M", "U")
     Next i
 
-    ' 8) Determinar NIVEL, ELEARN, CUPO_MINIMO y %_AL_CUPO_MIN
+    ' 11) Determinar NIVEL, ELEARN, CUPO_MINIMO y %_AL_CUPO_MIN
     sPaso = "Determinar nivel, modalidad y estado de cupo"
     Dim wsSrc As Worksheet, lo As ListObject
     Dim colNivel As Long, colElearn As Long, colMatr As Long, colTipo As Long
@@ -486,10 +486,10 @@ Sub ProcesarCursosTxt()
         End If
     Next i
 
-    ' 9) Ajustar formato de columnas principales
+    ' 12) Ajustar formato de columnas principales
     wsNew.Columns.AutoFit
 
-    ' 9.1) Mover columna TIPO_DE_SECCION después de CURS_SECC
+    ' 13) Mover columna TIPO_DE_SECCION después de CURS_SECC
     Dim colAfterCursSecc As Long
     colAfterCursSecc = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column + 1
     colTipoDeSeccion = wsNew.Rows(1).Find("TIPO_DE_SECCION", , xlValues, xlWhole).Column
@@ -499,11 +499,11 @@ Sub ProcesarCursosTxt()
         Application.CutCopyMode = False
     End If
 
-    ' 9.2) Formatear columna CUPO_MINIMO como General
+    ' 14) Formatear columna CUPO_MINIMO como General
     colCupoMinimo = wsNew.Rows(1).Find("CUPO_MINIMO", , xlValues, xlWhole).Column
     wsNew.Columns(colCupoMinimo).NumberFormat = "General"
 
-    ' 9.3) Aplicar formato condicional en %_AL_CUPO_MIN
+    ' 15) Aplicar formato condicional en %_AL_CUPO_MIN
     Dim rngEstado As Range
     colEstado = wsNew.Rows(1).Find("%_AL_CUPO_MIN", , xlValues, xlWhole).Column
     Set rngEstado = wsNew.Range(wsNew.Cells(2, colEstado), wsNew.Cells(lastRow, colEstado))
@@ -523,18 +523,13 @@ Sub ProcesarCursosTxt()
         .Direction = xlRTL
     End With
     
-    ' 9.4) Aplicar filtros automáticos a la hoja principal
-    sPaso = "Aplicar filtros automáticos"
-    Dim dataRange As Range
-    Set dataRange = wsNew.Range("A1").CurrentRegion
-    dataRange.AutoFilter
-   
+  
     ' Recalcular posiciones de columnas tras inserciones y movimientos
     colCupo = wsNew.Rows(1).Find("CUPO", , xlValues, xlWhole).Column
     colMatr = wsNew.Rows(1).Find("MATR", , xlValues, xlWhole).Column
     colCupoMinimo = wsNew.Rows(1).Find("CUPO_MINIMO", , xlValues, xlWhole).Column
 
-    ' 9.45) Renombrar y recalcular columna POR% ? %_AL_CUPO_MAX_SOBREC
+    ' 17) Renombrar y recalcular columna POR% ? %_AL_CUPO_MAX_SOBREC
     sPaso = "Recalcular %_AL_CUPO_MAX_SOBREC"
     
     ' Recalcular posiciones por si han cambiado
@@ -599,7 +594,7 @@ Sub ProcesarCursosTxt()
         .ShowValue = True
     End With
 
-    ' 9.45) Reorganizar, renombrar y describir columnas según TablaColumnas
+    ' 18) Reorganizar, renombrar y describir columnas según TablaColumnas
     sPaso = "Aplicar estructura según TablaColumnas"
     
     Dim loTC As ListObject
@@ -670,7 +665,7 @@ Sub ProcesarCursosTxt()
         End If
     Next fila
 
-    ' 9.5) Dividir en hojas según Facultades
+    ' 19) Dividir en hojas según Facultades
     sPaso = "Dividir datos en hojas según Facultades"
     Dim loFacultades As ListObject
     Dim dictHojas As Object, dictHojasNombres As Object
@@ -726,7 +721,16 @@ Sub ProcesarCursosTxt()
     ' Identificar columna FAC en hoja Cursos
     colFAC = wsNew.Rows(1).Find("FAC", , xlValues, xlWhole).Column
     
-    ' Crear hojas nuevas
+    ' Aplicar filtros automáticos a la hoja principal
+    sPaso = "Aplicar filtros automáticos"
+    Dim dataRange As Range
+    Set dataRange = wsNew.Range("A1").CurrentRegion
+    dataRange.AutoFilter
+    
+    sPaso = "Dividir datos en hojas según Facultades"
+
+     
+     ' Crear hojas nuevas
     For Each facValor In dictHojas.Keys
         filtros = dictHojas(facValor)
         
@@ -758,17 +762,7 @@ Sub ProcesarCursosTxt()
         Set copiarRango = Nothing
         
         ' Ajustes en cada hoja
-        
-        ' Mover columna FAC al inicio
-        On Error Resume Next
-        colFACnueva = nuevaWs.Rows(1).Find("FAC", , xlValues, xlWhole).Column
-        On Error GoTo ErrHandler
-        If colFACnueva > 1 Then
-            nuevaWs.Columns(colFACnueva).Cut
-            nuevaWs.Columns(1).Insert Shift:=xlToRight
-            Application.CutCopyMode = False
-        End If
-        
+                
         ' Aplicar autofiltros
         nuevaWs.Range("A1").CurrentRegion.AutoFilter
 
@@ -777,10 +771,10 @@ Sub ProcesarCursosTxt()
 
     Next facValor
     
-    ' Limpiar filtros de la hoja principal
-    wsNew.AutoFilterMode = False
+    ' Ajustar ancho de columnas para que se vea todo
+    wsNew.Columns.AutoFit
 
-    ' 10) Guardar el nuevo archivo
+    ' 20) Guardar el nuevo archivo
     sPaso = "Guardar nuevo archivo"
     Dim savePath As Variant
     savePath = Application.GetSaveAsFilename( _
@@ -799,5 +793,4 @@ ErrHandler:
            "Descripción: " & Err.Description, _
            vbCritical, "Error en macro"
 End Sub
-
 
