@@ -201,83 +201,94 @@ Sub ProcesarCursosTxt()
         wsNew.Columns(colEDIF).Delete
     End If
 
-	' 5.2) Consolidar horarios por CURS_SECC
-	sPaso = "Consolidar múltiples filas por CURS_SECC"
+    ' 5.2) Consolidar horarios por CURS_SECC
+    sPaso = "Consolidar múltiples filas por CURS_SECC"
 
-	Dim colDays As Long, colHin As Long, colHout As Long
-	Dim colHorario As Long, colCursoSecc As Long
-	Dim dictSecciones As Object, key As String
-	Dim rowData As Variant
-	Dim hInStr As String, hOutStr As String
+    Dim colDays As Long, colHin As Long, colHout As Long
+    Dim colHorario As Long, colCursoSecc As Long
+    Dim dictSecciones As Object, key As String
+    Dim rowData As Variant
+    Dim hInStr As String, hOutStr As String
 
-	Set dictSecciones = CreateObject("Scripting.Dictionary")
+    Set dictSecciones = CreateObject("Scripting.Dictionary")
 
-	colCursoSecc = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
-	colSalon = wsNew.Rows(1).Find("EDIF-SALON", , xlValues, xlWhole).Column
-	colDays = wsNew.Rows(1).Find("DAYS", , xlValues, xlWhole).Column
-	colHin = wsNew.Rows(1).Find("H-IN", , xlValues, xlWhole).Column
-	colHout = wsNew.Rows(1).Find("H-OUT", , xlValues, xlWhole).Column
+    colCursoSecc = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
+    colSALON = wsNew.Rows(1).Find("EDIF-SALON", , xlValues, xlWhole).Column
+    colDays = wsNew.Rows(1).Find("DAYS", , xlValues, xlWhole).Column
+    colHin = wsNew.Rows(1).Find("H-IN", , xlValues, xlWhole).Column
+    colHout = wsNew.Rows(1).Find("H-OUT", , xlValues, xlWhole).Column
 
-	' Crear columna nueva para HORARIO
-	colHorario = wsNew.Cells(1, wsNew.Columns.Count).End(xlToLeft).Column + 1
-	wsNew.Cells(1, colHorario).Value = "HORARIO"
+    ' Crear columna nueva para HORARIO
+    colHorario = wsNew.Cells(1, wsNew.Columns.Count).End(xlToLeft).Column + 1
+    wsNew.Cells(1, colHorario).Value = "HORARIO"
 
-	lastRow = wsNew.Cells(wsNew.Rows.Count, 1).End(xlUp).Row
+    lastRow = wsNew.Cells(wsNew.Rows.Count, 1).End(xlUp).Row
 
-	' Recorrer y agrupar por CURS_SECC
-	For i = 2 To lastRow
-		key = Trim(wsNew.Cells(i, colCursoSecc).Value)
-		
-		If IsDate(wsNew.Cells(i, colHin).Value) Then
-			hInStr = Format(wsNew.Cells(i, colHin).Value, "hh:mm")
-		Else
-			hInStr = wsNew.Cells(i, colHin).Text
-		End If
-		
-		If IsDate(wsNew.Cells(i, colHout).Value) Then
-			hOutStr = Format(wsNew.Cells(i, colHout).Value, "hh:mm")
-		Else
-			hOutStr = wsNew.Cells(i, colHout).Text
-		End If
+    ' Recorrer y agrupar por CURS_SECC
+    For i = 2 To lastRow
+        key = Trim(wsNew.Cells(i, colCursoSecc).Value)
+        
+        If IsDate(wsNew.Cells(i, colHin).Value) Then
+            hInStr = Format(wsNew.Cells(i, colHin).Value, "hh:mm")
+        Else
+            hInStr = wsNew.Cells(i, colHin).Text
+        End If
+        
+        If IsDate(wsNew.Cells(i, colHout).Value) Then
+            hOutStr = Format(wsNew.Cells(i, colHout).Value, "hh:mm")
+        Else
+            hOutStr = wsNew.Cells(i, colHout).Text
+        End If
 
-		If Not dictSecciones.exists(key) Then
-			dictSecciones.Add key, _
-				Array(wsNew.Cells(i, colSalon).Value, _
-					  wsNew.Cells(i, colDays).Value, _
-					  hInStr & "-" & hOutStr)
-		Else
-			rowData = dictSecciones(key)
-			rowData(0) = rowData(0) & vbLf & wsNew.Cells(i, colSalon).Value
-			rowData(1) = rowData(1) & vbLf & wsNew.Cells(i, colDays).Value
-			rowData(2) = rowData(2) & vbLf & hInStr & "-" & hOutStr
-			dictSecciones(key) = rowData
-		End If
-	Next i
+        If Not dictSecciones.Exists(key) Then
+            dictSecciones.Add key, _
+                Array(wsNew.Cells(i, colSALON).Value, _
+                      wsNew.Cells(i, colDays).Value, _
+                      hInStr & "-" & hOutStr)
+        Else
+            rowData = dictSecciones(key)
+            rowData(0) = rowData(0) & vbLf & wsNew.Cells(i, colSALON).Value
+            rowData(1) = rowData(1) & vbLf & wsNew.Cells(i, colDays).Value
+            rowData(2) = rowData(2) & vbLf & hInStr & "-" & hOutStr
+            dictSecciones(key) = rowData
+        End If
+    Next i
 
-	' Eliminar todas las filas menos una por CURS_SECC
-	Dim seen As Object: Set seen = CreateObject("Scripting.Dictionary")
-	For i = lastRow To 2 Step -1
-		key = Trim(wsNew.Cells(i, colCursoSecc).Value)
-		If seen.exists(key) Then
-			wsNew.Rows(i).Delete
-		Else
-			seen.Add key, True
-		End If
-	Next i
+    ' Eliminar todas las filas menos una por CURS_SECC
+    Dim seen As Object: Set seen = CreateObject("Scripting.Dictionary")
+    For i = lastRow To 2 Step -1
+        key = Trim(wsNew.Cells(i, colCursoSecc).Value)
+        If seen.Exists(key) Then
+            wsNew.Rows(i).Delete
+        Else
+            seen.Add key, True
+        End If
+    Next i
 
-	' Recalcular último row
-	lastRow = wsNew.Cells(wsNew.Rows.Count, 1).End(xlUp).Row
+    ' Recalcular último row
+    lastRow = wsNew.Cells(wsNew.Rows.Count, 1).End(xlUp).Row
 
-	' Insertar los valores consolidados
-	For i = 2 To lastRow
-		key = Trim(wsNew.Cells(i, colCursoSecc).Value)
-		If dictSecciones.exists(key) Then
-			rowData = dictSecciones(key)
-			wsNew.Cells(i, colSalon).Value = rowData(0)
-			wsNew.Cells(i, colDays).Value = rowData(1)
-			wsNew.Cells(i, colHorario).Value = rowData(2)
-		End If
-	Next i
+    ' Insertar los valores consolidados
+    For i = 2 To lastRow
+        key = Trim(wsNew.Cells(i, colCursoSecc).Value)
+        If dictSecciones.Exists(key) Then
+            rowData = dictSecciones(key)
+            wsNew.Cells(i, colSALON).Value = rowData(0)
+            wsNew.Cells(i, colDays).Value = rowData(1)
+            wsNew.Cells(i, colHorario).Value = rowData(2)
+        End If
+    Next i
+    
+    ' Eliminar columnas H-IN y H-OUT (de derecha a izquierda para evitar desplazamiento)
+    colHin = wsNew.Rows(1).Find("H-IN", , xlValues, xlWhole).Column
+    colHout = wsNew.Rows(1).Find("H-OUT", , xlValues, xlWhole).Column
+    If colHin > colHout Then
+        wsNew.Columns(colHin).Delete
+        wsNew.Columns(colHout).Delete
+    Else
+        wsNew.Columns(colHout).Delete
+        wsNew.Columns(colHin).Delete
+    End If
 
     ' 6) Consolidar datos de PROFx y LOD%x en una sola celda
     sPaso = "Consolidar columnas PROFx y LOD%x"
@@ -306,32 +317,32 @@ Sub ProcesarCursosTxt()
     For i = 2 To lastRow
         Dim sDetalle As String: sDetalle = ""
         For j = 1 To 6
-		Dim sProf as String
-		Dim sID As String, last4 As String, sLOD As String
-		sProf = ""
-		If colID(j) > 0 Then sID = Trim(wsNew.Cells(i, colID(j)).Value) Else sID = ""
+        Dim sProf As String
+        Dim sID As String, last4 As String, sLOD As String
+        sProf = ""
+        If colID(j) > 0 Then sID = Trim(wsNew.Cells(i, colID(j)).Value) Else sID = ""
 
-		If colProf(j) > 0 Then sProf = Trim(wsNew.Cells(i, colProf(j)).Value)
+        If colProf(j) > 0 Then sProf = Trim(wsNew.Cells(i, colProf(j)).Value)
 
-		If sID <> "" And sID <> "0" Then
-			If sProf = "" Then
-				If Len(sID) >= 4 Then
-					last4 = Right(sID, 4)
-				Else
-					last4 = sID
-				End If
-				sProf = "XXX-XX-" & last4
-			End If
-		End If
+        If sID <> "" And sID <> "0" Then
+            If sProf = "" Then
+                If Len(sID) >= 4 Then
+                    last4 = Right(sID, 4)
+                Else
+                    last4 = sID
+                End If
+                sProf = "XXX-XX-" & last4
+            End If
+        End If
 
-		If sProf <> "" Then
-			If sDetalle <> "" Then sDetalle = sDetalle & vbNewLine
-			sDetalle = sDetalle & sProf
+        If sProf <> "" Then
+            If sDetalle <> "" Then sDetalle = sDetalle & vbNewLine
+            sDetalle = sDetalle & sProf
 
-			sLOD = ""
-			If colLOD(j) > 0 Then sLOD = Trim(wsNew.Cells(i, colLOD(j)).Value)
-			If sLOD <> "" Then sDetalle = sDetalle & " (" & sLOD & "%)"
-		End If
+            sLOD = ""
+            If colLOD(j) > 0 Then sLOD = Trim(wsNew.Cells(i, colLOD(j)).Value)
+            If sLOD <> "" Then sDetalle = sDetalle & " (" & sLOD & "%)"
+        End If
         Next j
         wsNew.Cells(i, colConsol).Value = sDetalle
     Next i
@@ -360,23 +371,30 @@ Sub ProcesarCursosTxt()
     
     ' 7) Añadir columna TIPO_DE_SECCION
     sPaso = "Añadir columna TIPO_DE_SECCION"
-	Dim colCursSecc As Long
+
     Dim colTipoDeSeccion As Long
-	colCursSecc = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
     colTipoDeSeccion = wsNew.Cells(1, wsNew.Columns.Count).End(xlToLeft).Column + 1
     wsNew.Cells(1, colTipoDeSeccion).Value = "TIPO_DE_SECCION"
-    
-    ' Identificar secciones múltiples
-    Dim dictSecs As Object
-    Set dictSecs = CreateObject("Scripting.Dictionary")
+
+    Dim dictTipoClave As Object
+    Set dictTipoClave = CreateObject("Scripting.Dictionary")
+
+    Dim colCursSecc As Long
+    colCursSecc = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
+    Dim colTipoSecc As Long
+    colTipoSecc = wsNew.Rows(1).Find("TIPO", , xlValues, xlWhole).Column
+
+    ' Contar ocurrencias por clave (primeros 8 de CURS_SECC + tipo)
     For i = 2 To lastRow
-        Dim key8 As String
-        key8 = Left(wsNew.Cells(i, colCursSecc).Value, 8)
-        dictSecs(key8) = dictSecs(key8) + 1
+        Dim claveTipo As String
+        claveTipo = Left(wsNew.Cells(i, colCursSecc).Value, 8) & "|" & Trim(wsNew.Cells(i, colTipoSecc).Value)
+        dictTipoClave(claveTipo) = dictTipoClave(claveTipo) + 1
     Next i
+
+    ' Asignar M o U según conteo
     For i = 2 To lastRow
-        key8 = Left(wsNew.Cells(i, colCursSecc).Value, 8)
-        wsNew.Cells(i, colTipoDeSeccion).Value = IIf(dictSecs(key8) > 1, "M", "U")
+        claveTipo = Left(wsNew.Cells(i, colCursSecc).Value, 8) & "|" & Trim(wsNew.Cells(i, colTipoSecc).Value)
+        wsNew.Cells(i, colTipoDeSeccion).Value = IIf(dictTipoClave(claveTipo) > 1, "M", "U")
     Next i
 
     ' 8) Determinar NIVEL, ELEARN, CUPO_MINIMO y %_AL_CUPO_MIN
@@ -499,6 +517,7 @@ Sub ProcesarCursosTxt()
         .BarFillType = xlDataBarFillGradient
         .NegativeBarFormat.ColorType = xlDataBarColor
         .ShowValue = True
+        .Direction = xlRTL
     End With
     
     ' 9.4) Aplicar filtros automáticos a la hoja principal
@@ -555,13 +574,6 @@ Sub ProcesarCursosTxt()
     
     rngPOR.FormatConditions.Delete
 
-    ' Verde si es valor sin texto (dentro del cupo)
-    With rngPOR.FormatConditions.Add(Type:=xlCellValue, Operator:=xlGreaterEqual, Formula1:="=0")
-        .Interior.Color = RGB(146, 208, 80)
-        .Font.Color = RGB(0, 97, 0)
-        .StopIfTrue = False
-    End With
-
     ' Amarillo si contiene "MatRestr" o "SobreC"
     With rngPOR.FormatConditions.Add(Type:=xlTextString, String:="MatRestr", TextOperator:=xlContains)
         .Interior.Color = RGB(255, 255, 0)
@@ -574,13 +586,12 @@ Sub ProcesarCursosTxt()
         .StopIfTrue = False
     End With
 
-    ' Databar verde derecha a izquierda solo si es numérico
+    ' Databar verde solo si es numérico
     With rngPOR.FormatConditions.AddDatabar
         .MinPoint.Modify newtype:=xlConditionValueLowestValue
         .MaxPoint.Modify newtype:=xlConditionValueHighestValue
-        .BarColor.Color = RGB(0, 97, 0)
+        .BarColor.Color = RGB(146, 208, 80)
         .BarFillType = xlDataBarFillGradient
-        '.BarDirection = xlRTL ' <- Este cambia la dirección
         .NegativeBarFormat.ColorType = xlDataBarColor
         .ShowValue = True
     End With
