@@ -478,16 +478,18 @@ Sub ProcesarCursosTxt()
         
         wsNew.Cells(i, colCupoMinimo).Value = minCupo
         
-        If minCupo = 0 Or wsNew.Cells(i, colMatr).Value >= minCupo Then
-            wsNew.Cells(i, colEstado).Value = "100%"
+		If minCupo = 0 Then
+			wsNew.Cells(i, colEstado).Value = "Min 0"
+        ElseIf wsNew.Cells(i, colMatr).Value >= minCupo Then
+            wsNew.Cells(i, colEstado).Value = "Ok"
         Else
             wsNew.Cells(i, colEstado).Value = _
                 Format((minCupo - wsNew.Cells(i, colMatr).Value) / minCupo, "0%")
         End If
     Next i
 
-    ' 12) Ajustar formato de columnas principales
-    wsNew.Columns.AutoFit
+    ' 12) Ajustar formato de columnas principales (se hace más adelante, eliminado)
+    ' wsNew.Columns.AutoFit
 
     ' 13) Mover columna TIPO_DE_SECCION después de CURS_SECC
     Dim colAfterCursSecc As Long
@@ -509,8 +511,12 @@ Sub ProcesarCursosTxt()
     Set rngEstado = wsNew.Range(wsNew.Cells(2, colEstado), wsNew.Cells(lastRow, colEstado))
     
     rngEstado.FormatConditions.Delete
-    With rngEstado.FormatConditions.Add(Type:=xlCellValue, Operator:=xlEqual, Formula1:="=100%")
-        .Interior.Color = RGB(146, 208, 80) ' Verde para 100%
+    With rngEstado.FormatConditions.Add(Type:=xlCellValue, Operator:=xlEqual, Formula1:="=""OK""")
+        .Interior.Color = RGB(146, 208, 80) ' Verde para OK
+        .Font.Color = RGB(0, 97, 0)
+    End With
+    With rngEstado.FormatConditions.Add(Type:=xlCellValue, Operator:=xlEqual, Formula1:="=""Min 0""")
+        .Interior.Color = RGB(255, 153, 0) ' Anaranjado
         .Font.Color = RGB(0, 97, 0)
     End With
     With rngEstado.FormatConditions.AddDatabar
@@ -563,6 +569,9 @@ Sub ProcesarCursosTxt()
         Else
             cellValue = "N/D"
         End If
+		If valCupoMin = valCupo Then
+			cellValue = "Cupo Min=Cupo Max. " & cellValue
+		End If
         wsNew.Cells(i, colPOR).Value = cellValue
     Next i
 
@@ -785,31 +794,16 @@ SiguienteColumna:
         .InputMessage = "Observaciones o instrucciones del DAA"
     End With
 
-    ' Proteger hoja permitiendo modificar solo esas 4 columnas
-    Dim cell As Range
-    wsNew.Unprotect
-    wsNew.Cells.Locked = True
-    
-    lastRow = wsNew.Cells(wsNew.Rows.Count, 1).End(xlUp).Row
-    
-    Dim colA As Long, colJ As Long, colF As Long, colC As Long
-    
-    colA = wsNew.Rows(1).Find("ACCIÓN", , xlValues, xlWhole).Column
-    colJ = wsNew.Rows(1).Find("JUSTIFICACIÓN", , xlValues, xlWhole).Column
-    colF = wsNew.Rows(1).Find("ACCIÓN FINAL", , xlValues, xlWhole).Column
-    colC = wsNew.Rows(1).Find("COMENTARIO DAA", , xlValues, xlWhole).Column
-    
-    wsNew.Range(wsNew.Cells(2, colA), wsNew.Cells(lastRow, colA)).Locked = False
-    wsNew.Range(wsNew.Cells(2, colJ), wsNew.Cells(lastRow, colJ)).Locked = False
-    wsNew.Range(wsNew.Cells(2, colF), wsNew.Cells(lastRow, colF)).Locked = False
-    wsNew.Range(wsNew.Cells(2, colC), wsNew.Cells(lastRow, colC)).Locked = False
-
-
     ' Aplicar filtros automáticos a la hoja principal
     sPaso = "Aplicar filtros automáticos"
     Dim dataRange As Range
     Set dataRange = wsNew.Range("A1").CurrentRegion
     dataRange.AutoFilter
+
+	' Congelar fila 1
+	wsNew.Range("A2").Select
+	wsNew.Application.ActiveWindow.FreezePanes = True
+
     
     sPaso = "Dividir datos en hojas según Facultades"
 
@@ -850,9 +844,57 @@ SiguienteColumna:
         ' Aplicar autofiltros
         nuevaWs.Range("A1").CurrentRegion.AutoFilter
 
-        ' Ajustar ancho de columnas para que se vea todo y filas
-        nuevaWs.Columns.AutoFit
-        nuevaWs.Rows.AutoFit
+		' Proteger hojas permitiendo modificar solo esas 4 columnas
+		Dim cell As Range
+		nuevaWs.Unprotect
+		nuevaWs.Cells.Locked = True
+		
+		lastRow = nuevaWs.Cells(nuevaWs.Rows.Count, 1).End(xlUp).Row
+		
+		Dim colA As Long, colJ As Long, colF As Long, colC As Long
+		Dim colPerc As Long
+		
+		colA = nuevaWs.Rows(1).Find("ACCIÓN", , xlValues, xlWhole).Column
+		colJ = nuevaWs.Rows(1).Find("JUSTIFICACIÓN", , xlValues, xlWhole).Column
+		' colF = nuevaWs.Rows(1).Find("ACCIÓN FINAL", , xlValues, xlWhole).Column
+		' colC = nuevaWs.Rows(1).Find("COMENTARIO DAA", , xlValues, xlWhole).Column
+		
+		Range(nuevaWs.Cells(2, colA), nuevaWs.Cells(lastRow, colA)).Locked = False
+		Range(nuevaWs.Cells(2, colJ), nuevaWs.Cells(lastRow, colJ)).Locked = False
+		' Range(nuevaWs.Cells(2, colF), nuevaWs.Cells(lastRow, colF)).Locked = False
+		' Range(nuevaWs.Cells(2, colC), nuevaWs.Cells(lastRow, colC)).Locked = False
+
+		colPerc = nuevaWs.Rows(1).Find("Perc a min.", , xlValues, xlWhole).Column
+		
+
+
+		' Establecer formato visual y restringir selección solo a celdas desbloqueadas
+		With nuevaWs
+			' Aplicar color a celdas desbloqueadas
+			.Range(.Cells(2, colA), .Cells(lastRow, colA)).Interior.Color = RGB(255, 255, 153) ' Amarillo claro
+			.Range(.Cells(2, colJ), .Cells(lastRow, colJ)).Interior.Color = RGB(255, 255, 153)
+			'  .Range(.Cells(2, colF), .Cells(lastRow, colF)).Interior.Color = RGB(255, 255, 153)
+			'  .Range(.Cells(2, colC), .Cells(lastRow, colC)).Interior.Color = RGB(255, 255, 153)
+
+			' Ajustar ancho de columnas para que se vea todo y filas
+			.Columns.AutoFit
+			.Rows.AutoFit
+			.Columns(colJ).ColumnWidth = 40 ' Justificación: more room for text
+
+			' Aplicar filtro: ocultar filas con "Ok"
+			.Range("A1").CurrentRegion.AutoFilter Field:=colPerc, Criteria1:="<>Ok"
+			' Congelar fila 1
+			.Range("A2").Select
+			.Application.ActiveWindow.FreezePanes = True
+
+			' Progeger la hoja
+			' .EnableSelection = xlUnlockedCells
+			.Protect Password:="facultad2025", AllowFiltering:=True, _
+				AllowInsertingRows:=False, AllowDeletingRows:=False, _
+				AllowInsertingColumns:=False, AllowDeletingColumns:=False, _
+				AllowSorting:=True, AllowFormattingCells:=False, _
+				AllowFormattingColumns:=False, AllowFormattingRows:=False
+		End With
 
     Next facValor
     
@@ -864,10 +906,10 @@ SiguienteColumna:
     If wsNew.FilterMode Then wsNew.ShowAllData
 
     ' Progeger la hoja
-    wsNew.Protect Password:="facultad2025", AllowFiltering:=True, _
-        AllowInsertingRows:=False, AllowDeletingRows:=False, _
-        AllowInsertingColumns:=False, AllowDeletingColumns:=False, _
-        AllowSorting:=False
+    ' wsNew.Protect Password:="facultad2025", AllowFiltering:=True, _
+    '     AllowInsertingRows:=False, AllowDeletingRows:=False, _
+    '     AllowInsertingColumns:=False, AllowDeletingColumns:=False, _
+    '     AllowSorting:=False
 
 
     ' 20) Guardar el nuevo archivo
@@ -889,8 +931,4 @@ ErrHandler:
            "Descripción: " & Err.Description, _
            vbCritical, "Error en macro"
 End Sub
-
-
-
-
 
