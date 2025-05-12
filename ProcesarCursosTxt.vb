@@ -478,8 +478,8 @@ Sub ProcesarCursosTxt()
         
         wsNew.Cells(i, colCupoMinimo).Value = minCupo
         
-		If minCupo = 0 Then
-			wsNew.Cells(i, colEstado).Value = "Min 0"
+        If minCupo = 0 Then
+            wsNew.Cells(i, colEstado).Value = "Min 0"
         ElseIf wsNew.Cells(i, colMatr).Value >= minCupo Then
             wsNew.Cells(i, colEstado).Value = "Ok"
         Else
@@ -569,9 +569,9 @@ Sub ProcesarCursosTxt()
         Else
             cellValue = "N/D"
         End If
-		If valCupoMin = valCupo Then
-			cellValue = "Cupo Min=Cupo Max. " & cellValue
-		End If
+        If valCupoMin = valCupo Then
+            cellValue = "Cupo Min=Cupo Max. " & cellValue
+        End If
         wsNew.Cells(i, colPOR).Value = cellValue
     Next i
 
@@ -800,9 +800,9 @@ SiguienteColumna:
     Set dataRange = wsNew.Range("A1").CurrentRegion
     dataRange.AutoFilter
 
-	' Congelar fila 1
-	wsNew.Range("A2").Select
-	wsNew.Application.ActiveWindow.FreezePanes = True
+    ' Congelar fila 1
+    wsNew.Range("A2").Select
+    wsNew.Application.ActiveWindow.FreezePanes = True
 
     
     sPaso = "Dividir datos en hojas según Facultades"
@@ -844,57 +844,57 @@ SiguienteColumna:
         ' Aplicar autofiltros
         nuevaWs.Range("A1").CurrentRegion.AutoFilter
 
-		' Proteger hojas permitiendo modificar solo esas 4 columnas
-		Dim cell As Range
-		nuevaWs.Unprotect
-		nuevaWs.Cells.Locked = True
-		
-		lastRow = nuevaWs.Cells(nuevaWs.Rows.Count, 1).End(xlUp).Row
-		
-		Dim colA As Long, colJ As Long, colF As Long, colC As Long
-		Dim colPerc As Long
-		
-		colA = nuevaWs.Rows(1).Find("ACCIÓN", , xlValues, xlWhole).Column
-		colJ = nuevaWs.Rows(1).Find("JUSTIFICACIÓN", , xlValues, xlWhole).Column
-		' colF = nuevaWs.Rows(1).Find("ACCIÓN FINAL", , xlValues, xlWhole).Column
-		' colC = nuevaWs.Rows(1).Find("COMENTARIO DAA", , xlValues, xlWhole).Column
-		
-		Range(nuevaWs.Cells(2, colA), nuevaWs.Cells(lastRow, colA)).Locked = False
-		Range(nuevaWs.Cells(2, colJ), nuevaWs.Cells(lastRow, colJ)).Locked = False
-		' Range(nuevaWs.Cells(2, colF), nuevaWs.Cells(lastRow, colF)).Locked = False
-		' Range(nuevaWs.Cells(2, colC), nuevaWs.Cells(lastRow, colC)).Locked = False
+        ' Proteger hojas permitiendo modificar solo esas 4 columnas
+        Dim cell As Range
+        nuevaWs.Unprotect
+        nuevaWs.Cells.Locked = True
+        
+        lastRow = nuevaWs.Cells(nuevaWs.Rows.Count, 1).End(xlUp).Row
+        
+        Dim colA As Long, colJ As Long, colF As Long, colC As Long
+        Dim colPerc As Long
+        
+        colA = nuevaWs.Rows(1).Find("ACCIÓN", , xlValues, xlWhole).Column
+        colJ = nuevaWs.Rows(1).Find("JUSTIFICACIÓN", , xlValues, xlWhole).Column
+        ' colF = nuevaWs.Rows(1).Find("ACCIÓN FINAL", , xlValues, xlWhole).Column
+        ' colC = nuevaWs.Rows(1).Find("COMENTARIO DAA", , xlValues, xlWhole).Column
+        
+        Range(nuevaWs.Cells(2, colA), nuevaWs.Cells(lastRow, colA)).Locked = False
+        Range(nuevaWs.Cells(2, colJ), nuevaWs.Cells(lastRow, colJ)).Locked = False
+        ' Range(nuevaWs.Cells(2, colF), nuevaWs.Cells(lastRow, colF)).Locked = False
+        ' Range(nuevaWs.Cells(2, colC), nuevaWs.Cells(lastRow, colC)).Locked = False
 
-		colPerc = nuevaWs.Rows(1).Find("Perc a min.", , xlValues, xlWhole).Column
-		
+        colPerc = nuevaWs.Rows(1).Find("Perc a min.", , xlValues, xlWhole).Column
+        
 
 
-		' Establecer formato visual y restringir selección solo a celdas desbloqueadas
-		With nuevaWs
-			' Aplicar color a celdas desbloqueadas
-			.Range(.Cells(2, colA), .Cells(lastRow, colA)).Interior.Color = RGB(255, 255, 153) ' Amarillo claro
-			.Range(.Cells(2, colJ), .Cells(lastRow, colJ)).Interior.Color = RGB(255, 255, 153)
-			'  .Range(.Cells(2, colF), .Cells(lastRow, colF)).Interior.Color = RGB(255, 255, 153)
-			'  .Range(.Cells(2, colC), .Cells(lastRow, colC)).Interior.Color = RGB(255, 255, 153)
+        ' Establecer formato visual y restringir selección solo a celdas desbloqueadas
+        With nuevaWs
+            ' Aplicar color a celdas desbloqueadas
+            .Range(.Cells(2, colA), .Cells(lastRow, colA)).Interior.Color = RGB(255, 255, 153) ' Amarillo claro
+            .Range(.Cells(2, colJ), .Cells(lastRow, colJ)).Interior.Color = RGB(255, 255, 153)
+            '  .Range(.Cells(2, colF), .Cells(lastRow, colF)).Interior.Color = RGB(255, 255, 153)
+            '  .Range(.Cells(2, colC), .Cells(lastRow, colC)).Interior.Color = RGB(255, 255, 153)
 
-			' Ajustar ancho de columnas para que se vea todo y filas
-			.Columns.AutoFit
-			.Rows.AutoFit
-			.Columns(colJ).ColumnWidth = 40 ' Justificación: more room for text
+            ' Ajustar ancho de columnas para que se vea todo y filas
+            .Columns.AutoFit
+            .Rows.AutoFit
+            .Columns(colJ).ColumnWidth = 40 ' Justificación: more room for text
 
-			' Aplicar filtro: ocultar filas con "Ok"
-			.Range("A1").CurrentRegion.AutoFilter Field:=colPerc, Criteria1:="<>Ok"
-			' Congelar fila 1
-			.Range("A2").Select
-			.Application.ActiveWindow.FreezePanes = True
+            ' Aplicar filtro: ocultar filas con "Ok"
+            .Range("A1").CurrentRegion.AutoFilter Field:=colPerc, Criteria1:="<>Ok"
+            ' Congelar fila 1
+            .Range("A2").Select
+            .Application.ActiveWindow.FreezePanes = True
 
-			' Progeger la hoja
-			' .EnableSelection = xlUnlockedCells
-			.Protect Password:="facultad2025", AllowFiltering:=True, _
-				AllowInsertingRows:=False, AllowDeletingRows:=False, _
-				AllowInsertingColumns:=False, AllowDeletingColumns:=False, _
-				AllowSorting:=True, AllowFormattingCells:=False, _
-				AllowFormattingColumns:=False, AllowFormattingRows:=False
-		End With
+            ' Progeger la hoja
+            ' .EnableSelection = xlUnlockedCells
+            .Protect Password:="facultad2025", AllowFiltering:=True, _
+                AllowInsertingRows:=False, AllowDeletingRows:=False, _
+                AllowInsertingColumns:=False, AllowDeletingColumns:=False, _
+                AllowSorting:=True, AllowFormattingCells:=False, _
+                AllowFormattingColumns:=False, AllowFormattingRows:=False
+        End With
 
     Next facValor
     
@@ -911,18 +911,34 @@ SiguienteColumna:
     '     AllowInsertingColumns:=False, AllowDeletingColumns:=False, _
     '     AllowSorting:=False
 
-	Dim vbComp As Object
-	Const resumenPath As String = "ResumenFacultad.bas"
+    Dim vbComp As Object
+    Dim resumenPath As String
 
-	On Error Resume Next
-	' Borrar si ya existía un módulo con el mismo nombre
-	Set vbComp = wbNew.VBProject.VBComponents("ResumenFacultad")
-	If Not vbComp Is Nothing Then wbNew.VBProject.VBComponents.Remove vbComp
-	On Error GoTo 0
+    sPaso = "Añadir macro al Excel nuevo"
 
-	' Importar módulo desde archivo
-	wbNew.VBProject.VBComponents.Import resumenPath
+    Dim vbCompSrc As Object
+    Dim vbCompDest As Object
+    Dim vbModContent As String
 
+    ' Obtener módulo desde el archivo actual (ThisWorkbook)
+    Set vbCompSrc = ThisWorkbook.VBProject.VBComponents("ResumenFacultad")
+
+    ' Leer todo el contenido del módulo
+    vbModContent = vbCompSrc.CodeModule.Lines(1, vbCompSrc.CodeModule.CountOfLines)
+
+    ' Si ya existe en destino, eliminarlo
+    On Error Resume Next
+    Set vbCompDest = wbNew.VBProject.VBComponents("ResumenFacultad")
+    If Not vbCompDest Is Nothing Then
+        wbNew.VBProject.VBComponents.Remove vbCompDest
+    End If
+    On Error GoTo 0
+
+    ' Crear un nuevo módulo en wbNew
+    Set vbCompDest = wbNew.VBProject.VBComponents.Add(1) ' 1 = Módulo estándar
+    vbCompDest.Name = "ResumenFacultad"
+    vbCompDest.CodeModule.AddFromString vbModContent
+    
     ' 20) Guardar el nuevo archivo
     sPaso = "Guardar nuevo archivo"
     Dim savePath As Variant
@@ -930,53 +946,53 @@ SiguienteColumna:
         InitialFileName:="CuposProcesados.xlsm", _
         FileFilter:="Archivos de Excel (*.xlsm), *.xlsm")
     If savePath <> False Then
-        wbNew.SaveAs Filename:=savePath, FileFormat:=xlOpenXMLWorkbookMacroEnabled
+        wbNew.SaveAs fileName:=savePath, FileFormat:=xlOpenXMLWorkbookMacroEnabled
         MsgBox "Archivo guardado en:" & vbNewLine & savePath, vbInformation, "Proceso completado"
     End If
 
-	' 21) Crear un archivo por cada hoja de facultad
-	sPaso = "Exportar cada hoja de facultad como archivo individual"
+    ' 21) Crear un archivo por cada hoja de facultad
+    sPaso = "Exportar cada hoja de facultad como archivo individual"
 
-	Dim wsFac As Worksheet
-	Dim exportWB As Workbook
-	Dim nombreArchivo As String
-	Dim rutaDestino As String
+    Dim wsFac As Worksheet
+    Dim exportWB As Workbook
+    Dim nombreArchivo As String
+    Dim rutaDestino As String
 
-	rutaDestino = Application.GetSaveAsFilename( _
-		InitialFileName:="Seleccionar carpeta base para archivos individuales.xlsx", _
-		FileFilter:="Excel Files (*.xlsx), *.xlsx")
+    rutaDestino = Application.GetSaveAsFilename( _
+        InitialFileName:="Seleccionar carpeta base para archivos individuales.xlsx", _
+        FileFilter:="Excel Files (*.xlsx), *.xlsx")
 
-	If rutaDestino = "False" Then
-		MsgBox "Operación cancelada. No se exportaron archivos por facultad.", vbInformation
-		Exit Sub
-	End If
+    If rutaDestino = "False" Then
+        MsgBox "Operación cancelada. No se exportaron archivos por facultad.", vbInformation
+        Exit Sub
+    End If
 
-	' Extraer solo la carpeta
-	rutaDestino = Left(rutaDestino, InStrRev(rutaDestino, Application.PathSeparator))
+    ' Extraer solo la carpeta
+    rutaDestino = Left(rutaDestino, InStrRev(rutaDestino, Application.PathSeparator))
 
-	Application.ScreenUpdating = False
+    Application.ScreenUpdating = False
 
-	For Each wsFac In wbNew.Worksheets
-		If wsFac.Name <> "Cursos" Then ' Excluir hoja principal
-			' Verificar que A2 y B2 existan y no estén vacíos
-			If Len(wsFac.Range("A2").Value) > 0 And Len(wsFac.Range("B2").Value) > 0 Then
-				nombreArchivo = CleanFileName(wsFac.Range("A2").Value & "-" & wsFac.Range("B2").Value & "-Matricula insuficiente.xlsx")
+    For Each wsFac In wbNew.Worksheets
+        If wsFac.Name <> "Cursos" Then ' Excluir hoja principal
+            ' Verificar que A2 y B2 existan y no estén vacíos
+            If Len(wsFac.Range("A2").Value) > 0 And Len(wsFac.Range("B2").Value) > 0 Then
+                nombreArchivo = CleanFileName(wsFac.Range("A2").Value & "-" & wsFac.Range("B2").Value & "-Matricula insuficiente.xlsx")
 
-				Set exportWB = Workbooks.Add(xlWBATWorksheet)
-				wsFac.Copy Before:=exportWB.Sheets(1)
-				Application.DisplayAlerts = False
-				exportWB.Sheets(exportWB.Sheets.Count).Delete ' Elimina hoja vacía por defecto
-				Application.DisplayAlerts = True
+                Set exportWB = Workbooks.Add(xlWBATWorksheet)
+                wsFac.Copy Before:=exportWB.Sheets(1)
+                Application.DisplayAlerts = False
+                exportWB.Sheets(exportWB.Sheets.Count).Delete ' Elimina hoja vacía por defecto
+                Application.DisplayAlerts = True
 
-				exportWB.SaveAs rutaDestino & nombreArchivo, FileFormat:=xlOpenXMLWorkbook
-				exportWB.Close SaveChanges:=False
-			End If
-		End If
-	Next wsFac
+                exportWB.SaveAs rutaDestino & nombreArchivo, FileFormat:=xlOpenXMLWorkbook
+                exportWB.Close SaveChanges:=False
+            End If
+        End If
+    Next wsFac
 
-	Application.ScreenUpdating = True
+    Application.ScreenUpdating = True
 
-	MsgBox "Archivos individuales creados en: " & vbNewLine & rutaDestino, vbInformation
+    MsgBox "Archivos individuales creados en: " & vbNewLine & rutaDestino & vbNewLine & "Terminamos...", vbInformation
 
     Exit Sub
 
@@ -998,3 +1014,5 @@ Function CleanFileName(fileName As String) As String
 
     CleanFileName = Left(fileName, 200) ' Evitar nombres demasiado largos
 End Function
+
+

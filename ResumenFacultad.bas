@@ -1,4 +1,4 @@
-Attribute VB_Name = "Module1"
+Attribute VB_Name = "ResumenFacultad"
 Option Explicit
 
 Sub GenerarResumenPorFacultad()
@@ -20,7 +20,7 @@ Sub GenerarResumenPorFacultad()
 
     ' Encabezados
     With wsResumen
-        .Range("A1:H1").Value = Array("FACULTAD", "CURS_SECC", "TIPO_DE_SECCION", "ELEARN", "ACCIÓN", _
+        .Range("A1:H1").Value = Array("FACULTAD", "CURS_SECC", "TIPO_DE_SECCION", "ELEARN", "ACTIVIDAD", _
                                       "CUPO", "CUPO_MINIMO", "MATR")
         destRow = 2
     End With
@@ -36,7 +36,7 @@ Sub GenerarResumenPorFacultad()
                 colCupo = .Rows(1).Find("CUPO MAX", , xlValues, xlWhole).Column
                 colCUPO_MIN = .Rows(1).Find("CUPO MIN", , xlValues, xlWhole).Column
                 colElearn = .Rows(1).Find("Modalidad", , xlValues, xlWhole).Column
-                colAccion = .Rows(1).Find("ACCIÓN", , xlValues, xlWhole).Column
+                colAccion = .Rows(1).Find("Act", , xlValues, xlWhole).Column
                 colTipoSecc = .Rows(1).Find("TIPO SECC", , xlValues, xlWhole).Column
 
                 For i = 2 To lastRow
@@ -86,11 +86,11 @@ Sub GenerarResumenPorFacultad()
     With pt
         .ClearAllFilters
         .PivotFields("FACULTAD").Orientation = xlRowField
-
-        .PivotFields("TIPO_DE_SECCION").Orientation = xlColumnField
-        .PivotFields("ELEARN").Orientation = xlColumnField
-        .PivotFields("ACCIÓN").Orientation = xlPageField
-
+        .PivotFields("ACTIVIDAD").Orientation = xlRowField
+        
+        .PivotFields("TIPO_DE_SECCION").Orientation = xlPageField
+        .PivotFields("ELEARN").Orientation = xlPageField
+        
         .AddDataField .PivotFields("POR_DEBAJO_MIN"), "Por debajo cupo mínimo", xlSum
         .AddDataField .PivotFields("CUPOMAX_ES_CUPO"), "Cupo max = cupo mínimo", xlSum
         .AddDataField .PivotFields("MATR_RESTR"), "Matr. restringida (Cupo=0)", xlSum
