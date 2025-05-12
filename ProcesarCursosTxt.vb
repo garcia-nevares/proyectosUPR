@@ -911,15 +911,26 @@ SiguienteColumna:
     '     AllowInsertingColumns:=False, AllowDeletingColumns:=False, _
     '     AllowSorting:=False
 
+	Dim vbComp As Object
+	Const resumenPath As String = "ResumenFacultad.bas"
+
+	On Error Resume Next
+	' Borrar si ya existía un módulo con el mismo nombre
+	Set vbComp = wbNew.VBProject.VBComponents("ResumenFacultad")
+	If Not vbComp Is Nothing Then wbNew.VBProject.VBComponents.Remove vbComp
+	On Error GoTo 0
+
+	' Importar módulo desde archivo
+	wbNew.VBProject.VBComponents.Import resumenPath
 
     ' 20) Guardar el nuevo archivo
     sPaso = "Guardar nuevo archivo"
     Dim savePath As Variant
     savePath = Application.GetSaveAsFilename( _
-        InitialFileName:="CuposProcesados.xlsx", _
-        FileFilter:="Archivos de Excel (*.xlsx), *.xlsx")
+        InitialFileName:="CuposProcesados.xlsm", _
+        FileFilter:="Archivos de Excel (*.xlsm), *.xlsm")
     If savePath <> False Then
-        wbNew.SaveAs Filename:=savePath, FileFormat:=xlOpenXMLWorkbook
+        wbNew.SaveAs Filename:=savePath, FileFormat:=xlOpenXMLWorkbookMacroEnabled
         MsgBox "Archivo guardado en:" & vbNewLine & savePath, vbInformation, "Proceso completado"
     End If
 
