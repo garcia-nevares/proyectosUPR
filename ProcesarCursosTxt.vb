@@ -923,6 +923,50 @@ SiguienteColumna:
         MsgBox "Archivo guardado en:" & vbNewLine & savePath, vbInformation, "Proceso completado"
     End If
 
+	' 21) Crear un archivo por cada hoja de facultad
+	sPaso = "Exportar cada hoja de facultad como archivo individual"
+
+	Dim wsFac As Worksheet
+	Dim exportWB As Workbook
+	Dim nombreArchivo As String
+	Dim rutaDestino As String
+
+	rutaDestino = Application.GetSaveAsFilename( _
+		InitialFileName:="Seleccionar carpeta base para archivos individuales.xlsx", _
+		FileFilter:="Excel Files (*.xlsx), *.xlsx")
+
+	If rutaDestino = "False" Then
+		MsgBox "Operación cancelada. No se exportaron archivos por facultad.", vbInformation
+		Exit Sub
+	End If
+
+	' Extraer solo la carpeta
+	rutaDestino = Left(rutaDestino, InStrRev(rutaDestino, Application.PathSeparator))
+
+	Application.ScreenUpdating = False
+
+	For Each wsFac In wbNew.Worksheets
+		If wsFac.Name <> "Cursos" Then ' Excluir hoja principal
+			' Verificar que A2 y B2 existan y no estén vacíos
+			If Len(wsFac.Range("A2").Value) > 0 And Len(wsFac.Range("B2").Value) > 0 Then
+				nombreArchivo = CleanFileName(wsFac.Range("A2").Value & "-" & wsFac.Range("B2").Value & "-Matricula insuficiente.xlsx")
+
+				Set exportWB = Workbooks.Add(xlWBATWorksheet)
+				wsFac.Copy Before:=exportWB.Sheets(1)
+				Application.DisplayAlerts = False
+				exportWB.Sheets(exportWB.Sheets.Count).Delete ' Elimina hoja vacía por defecto
+				Application.DisplayAlerts = True
+
+				exportWB.SaveAs rutaDestino & nombreArchivo, FileFormat:=xlOpenXMLWorkbook
+				exportWB.Close SaveChanges:=False
+			End If
+		End If
+	Next wsFac
+
+	Application.ScreenUpdating = True
+
+	MsgBox "Archivos individuales creados en: " & vbNewLine & rutaDestino, vbInformation
+
     Exit Sub
 
 ' Manejo de errores
@@ -932,3 +976,14 @@ ErrHandler:
            vbCritical, "Error en macro"
 End Sub
 
+Function CleanFileName(fileName As String) As String
+    Dim invalidChars As Variant
+    invalidChars = Array("\", "/", ":", "*", "?", """", "<", ">", "|")
+
+    Dim ch As Variant
+    For Each ch In invalidChars
+        fileName = Replace(fileName, ch, "-")
+    Next ch
+
+    CleanFileName = Left(fileName, 200) ' Evitar nombres demasiado largos
+End Function
