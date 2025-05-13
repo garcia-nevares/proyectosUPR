@@ -400,7 +400,7 @@ Sub ProcesarCursosTxt()
         wsNew.Cells(i, colTipoDeSeccion).Value = IIf(dictTipoClave(claveTipo) > 1, "M", "U")
     Next i
 
-    ' 11) Determinar NIVEL, ELEARN, CUPO_MINIMO y %_AL_CUPO_MIN
+    ' 11) Determinar NIVEL, MODALI, CUPO_MINIMO y %_AL_CUPO_MIN
     sPaso = "Determinar nivel, modalidad y estado de cupo"
     Dim wsSrc As Worksheet, lo As ListObject
     Dim colNivel As Long, colElearn As Long, colMatr As Long, colTipo As Long
@@ -440,7 +440,7 @@ Sub ProcesarCursosTxt()
     ' Recalcular posiciones de columnas necesarias
     colNivel = wsNew.Rows(1).Find("NIVEL", , xlValues, xlWhole).Column
     colTipo = wsNew.Rows(1).Find("TIPO", , xlValues, xlWhole).Column
-    colElearn = wsNew.Rows(1).Find("ELEARN", , xlValues, xlWhole).Column
+    colElearn = wsNew.Rows(1).Find("MODALI", , xlValues, xlWhole).Column
     colTipoDeSeccion = wsNew.Rows(1).Find("TIPO_DE_SECCION", , xlValues, xlWhole).Column
     colCupoMinimo = wsNew.Rows(1).Find("CUPO_MINIMO", , xlValues, xlWhole).Column
     colMatr = wsNew.Rows(1).Find("MATR", , xlValues, xlWhole).Column
