@@ -100,7 +100,7 @@ Sub GenerarResumenPorFacultad()
         .AddDataField .PivotFields("Curso"), "Total secciones", xlCount
         .AddDataField .PivotFields("Bajo mínimo"), "Por debajo cupo mínimo", xlSum
         .AddDataField .PivotFields("Min = Max"), "Cupo max = cupo mínimo", xlSum
-        .AddDataField .PivotFields("Man < Min"), "Cupo max < cupo min", xlSum
+        .AddDataField .PivotFields("Max < Min"), "Cupo max < cupo min", xlSum
         .AddDataField .PivotFields("Mat restringida"), "Matr. restringida (Cupo=0)", xlSum
         .AddDataField .PivotFields("Con sobrecupo"), "En sobrecupo", xlSum
     End With
