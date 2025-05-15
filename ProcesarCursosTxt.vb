@@ -1,5 +1,3 @@
-Option Explicit
-
 Sub ProcesarCursosTxt()
     '*****************************************************
     ' Macro: ProcesarCursosTxt
@@ -136,15 +134,111 @@ Sub ProcesarCursosTxt()
         If falta.Count > 0 Then Exit Sub
     End If
   
-    ' 5) Eliminar filas con DEPT=ESUP
-    sPaso = "Eliminar filas con DEPT=ESUP"
-    Dim lastRow As Long
-    lastRow = wsNew.Cells(wsNew.Rows.Count, "A").End(xlUp).Row
-    Dim j As Long
-    Dim colDept As Long
+    ' 5) Excluir filas según tablas de exclusión
+    sPaso = "Excluir filas según ExcluirSecc, ExcluirCod, ExcluirAct, ExcluirDpt"
+    
+    Dim exclSecc As Object, exclCod4 As Object, exclCod8 As Object
+    Dim exclAct As Object, exclActCred As Object, exclDpt As Object
+    
+    Set exclSecc = CreateObject("Scripting.Dictionary")
+    Set exclCod4 = CreateObject("Scripting.Dictionary")
+    Set exclCod8 = CreateObject("Scripting.Dictionary")
+    Set exclAct = CreateObject("Scripting.Dictionary")
+    Set exclActCred = CreateObject("Scripting.Dictionary")
+    Set exclDpt = CreateObject("Scripting.Dictionary")
+    
+    ' Cargar tabla ExcluirSecc
+    For Each wsSrc In ThisWorkbook.Worksheets
+        Set lo = Nothing
+        On Error Resume Next
+        Set lo = wsSrc.ListObjects("ExcluirSecc")
+        On Error GoTo 0
+        If Not lo Is Nothing Then
+            For Each lr In lo.ListRows
+                exclSecc(Trim(Right(lr.Range(1, 1).Value, 3))) = True
+            Next lr
+            Exit For
+        End If
+    Next wsSrc
+    
+    ' Cargar tabla ExcluirCod
+    For Each wsSrc In ThisWorkbook.Worksheets
+        Set lo = Nothing
+        On Error Resume Next
+        Set lo = wsSrc.ListObjects("ExcluirCod")
+        On Error GoTo 0
+        If Not lo Is Nothing Then
+            For Each lr In lo.ListRows
+                Dim cod As String
+                cod = Trim(lr.Range(1, 1).Value)
+                If Len(cod) = 4 Then
+                    exclCod4(cod) = True
+                ElseIf Len(cod) = 8 Then
+                    exclCod8(cod) = True
+                End If
+            Next lr
+            Exit For
+        End If
+    Next wsSrc
+    
+    ' Cargar tabla ExcluirAct
+    For Each wsSrc In ThisWorkbook.Worksheets
+        Set lo = Nothing
+        On Error Resume Next
+        Set lo = wsSrc.ListObjects("ExcluirAct")
+        On Error GoTo 0
+        If Not lo Is Nothing Then
+            For Each lr In lo.ListRows
+                Dim act As String, cred As Variant
+                act = Trim(lr.Range(1, 1).Value)
+                cred = lr.Range(1, 2).Value
+                If IsEmpty(cred) Or Trim(cred) = "" Then
+                    exclAct(act) = True
+                Else
+                    exclActCred(act & "|" & cred) = True
+                End If
+            Next lr
+            Exit For
+        End If
+    Next wsSrc
+    
+    ' Cargar tabla ExcluirDpt
+    For Each wsSrc In ThisWorkbook.Worksheets
+        Set lo = Nothing
+        On Error Resume Next
+        Set lo = wsSrc.ListObjects("ExcluirDpt")
+        On Error GoTo 0
+        If Not lo Is Nothing Then
+            For Each lr In lo.ListRows
+                exclDpt(Trim(lr.Range(1, 1).Value)) = True
+            Next lr
+            Exit For
+        End If
+    Next wsSrc
+    
+    ' Columnas necesarias
+    Dim colCURS As Long, colTIPO As Long, colCRD As Long
     colDept = wsNew.Rows(1).Find("DEPT", , xlValues, xlWhole).Column
+    colCURS = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
+    colTIPO = wsNew.Rows(1).Find("TIPO", , xlValues, xlWhole).Column
+    colCRD = wsNew.Rows(1).Find("CRD", , xlValues, xlWhole).Column
+    
+    ' Recorrer filas de abajo hacia arriba y excluir según reglas
+    lastRow = wsNew.Cells(wsNew.Rows.Count, "A").End(xlUp).Row
+    
     For i = lastRow To 2 Step -1
-        If UCase(wsNew.Cells(i, colDept).Value) = "ESUP" Then
+        Dim cursVal As String, tipoVal As String, crdVal As Variant, deptVal As String
+        cursVal = Trim(wsNew.Cells(i, colCURS).Value)
+        tipoVal = Trim(wsNew.Cells(i, colTIPO).Value)
+        crdVal = wsNew.Cells(i, colCRD).Value
+        deptVal = Trim(wsNew.Cells(i, colDept).Value)
+        
+        If exclSecc.Exists(Right(cursVal, 3)) _
+            Or exclCod4.Exists(Left(cursVal, 4)) _
+            Or exclCod8.Exists(Left(cursVal, 8)) _
+            Or exclAct.Exists(tipoVal) _
+            Or exclActCred.Exists(tipoVal & "|" & crdVal) _
+            Or exclDpt.Exists(deptVal) Then
             wsNew.Rows(i).Delete
         End If
     Next i
@@ -153,15 +247,14 @@ Sub ProcesarCursosTxt()
     ' 6) Formatear CURS_SECC como XXXX9999-yyy
     sPaso = "Formatear CURS_SECC como XXXX9999-yyy"
 
-    Dim colCurs As Long
-    colCurs = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
+    colCURS = wsNew.Rows(1).Find("CURS_SECC", , xlValues, xlWhole).Column
 
     For i = 2 To lastRow
         Dim valRaw As String
-        valRaw = Trim(wsNew.Cells(i, colCurs).Value)
+        valRaw = Trim(wsNew.Cells(i, colCURS).Value)
         
         If Len(valRaw) = 11 Then
-            wsNew.Cells(i, colCurs).Value = _
+            wsNew.Cells(i, colCURS).Value = _
                 Left(valRaw, 8) & "-" & Right(valRaw, 3)
         End If
     Next i
@@ -402,14 +495,12 @@ Sub ProcesarCursosTxt()
 
     ' 11) Determinar NIVEL, MODALI, CUPO_MINIMO y %_AL_CUPO_MIN
     sPaso = "Determinar nivel, modalidad y estado de cupo"
-    Dim wsSrc As Worksheet, lo As ListObject
-    Dim colNivel As Long, colElearn As Long, colMatr As Long, colTipo As Long
+    Dim colNivel As Long, colElearn As Long, colMatr As Long
     Dim colCupo As Long, colEstado As Long, colCupoMinimo As Long, colPOR As Long
     Dim nivelKey As String, elearnKey As String, tipodeseccionKey As String
     Dim tipoCurso As String, clave As String
     Dim hdrMatch As Variant
     Dim minCupo As Double
-    Dim lr As ListRow
     
     ' Buscar tabla Cupos_Minimos
     For Each wsSrc In ThisWorkbook.Worksheets
@@ -439,7 +530,7 @@ Sub ProcesarCursosTxt()
 
     ' Recalcular posiciones de columnas necesarias
     colNivel = wsNew.Rows(1).Find("NIVEL", , xlValues, xlWhole).Column
-    colTipo = wsNew.Rows(1).Find("TIPO", , xlValues, xlWhole).Column
+    colTIPO = wsNew.Rows(1).Find("TIPO", , xlValues, xlWhole).Column
     colElearn = wsNew.Rows(1).Find("MODALI", , xlValues, xlWhole).Column
     colTipoDeSeccion = wsNew.Rows(1).Find("TIPO_DE_SECCION", , xlValues, xlWhole).Column
     colCupoMinimo = wsNew.Rows(1).Find("CUPO_MINIMO", , xlValues, xlWhole).Column
@@ -457,7 +548,7 @@ Sub ProcesarCursosTxt()
                         "P", "NP")
         tipodeseccionKey = wsNew.Cells(i, colTipoDeSeccion).Value
         clave = nivelKey & "-" & elearnKey & "-" & tipodeseccionKey
-        tipoCurso = Trim(wsNew.Cells(i, colTipo).Value)
+        tipoCurso = Trim(wsNew.Cells(i, colTIPO).Value)
 
         minCupo = 0
         hdrMatch = Application.Match(clave, lo.HeaderRowRange, 0)
@@ -879,7 +970,10 @@ SiguienteColumna:
             ' Ajustar ancho de columnas para que se vea todo y filas
             .Columns.AutoFit
             .Rows.AutoFit
-            .Columns(colJ).ColumnWidth = 40 ' Justificación: more room for text
+            
+            ' Ajustar ancho y permitir ajuste de texto en columna de Justificación
+            .Columns(colJ).ColumnWidth = 60 ' Justificación: more room for text
+            .Columns(colJ).WrapText = True  ' Permitir ajuste de texto
 
             ' Aplicar filtro: ocultar filas con "Ok"
             .Range("A1").CurrentRegion.AutoFilter Field:=colPerc, Criteria1:="<>Ok"
@@ -1014,5 +1108,7 @@ Function CleanFileName(fileName As String) As String
 
     CleanFileName = Left(fileName, 200) ' Evitar nombres demasiado largos
 End Function
+
+
 
 
